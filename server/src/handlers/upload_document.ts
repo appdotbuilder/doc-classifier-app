@@ -1,16 +1,29 @@
+import { db } from '../db';
+import { documentsTable } from '../db/schema';
 import { type UploadDocumentInput, type Document } from '../schema';
 
-export async function uploadDocument(input: UploadDocumentInput): Promise<Document> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is processing uploaded documents (PDF, DOCX, TXT).
-    // Should extract text content from files and store document metadata.
-    // Validates file format and size, extracts text content for classification.
-    return {
-        id: 0, // Placeholder ID
+export const uploadDocument = async (input: UploadDocumentInput): Promise<Document> => {
+  try {
+    // Insert document record
+    const result = await db.insert(documentsTable)
+      .values({
         filename: input.filename,
         file_type: input.file_type,
         file_size: input.file_size,
-        content: input.content || null, // Extracted text content
-        uploaded_at: new Date()
-    } as Document;
-}
+        content: input.content || null, // Use provided content or null
+      })
+      .returning()
+      .execute();
+
+    // Return the created document
+    const document = result[0];
+    return {
+      ...document,
+      // Convert timestamp to Date object for consistency with schema
+      uploaded_at: new Date(document.uploaded_at)
+    };
+  } catch (error) {
+    console.error('Document upload failed:', error);
+    throw error;
+  }
+};

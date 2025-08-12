@@ -1,8 +1,19 @@
+import { db } from '../db';
+import { categoriesTable } from '../db/schema';
 import { type Category } from '../schema';
 
-export async function getCategories(): Promise<Category[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all classification categories from the database.
-    // Returns an array of categories with their colors for badge display.
-    return [];
-}
+export const getCategories = async (): Promise<Category[]> => {
+  try {
+    // Fetch all categories ordered by creation date (newest first)
+    const results = await db.select()
+      .from(categoriesTable)
+      .orderBy(categoriesTable.created_at)
+      .execute();
+
+    // Return categories as-is since all fields are already in the correct format
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
+    throw error;
+  }
+};

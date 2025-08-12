@@ -1,15 +1,39 @@
+import { db } from '../db';
+import { criteriaTable, categoriesTable } from '../db/schema';
 import { type CreateCriteriaInput, type Criteria } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function createCriteria(input: CreateCriteriaInput): Promise<Criteria> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating new classification criteria in the database.
-    // Criteria define rules (patterns/keywords) for automatically classifying documents.
-    return {
-        id: 0, // Placeholder ID
+export const createCriteria = async (input: CreateCriteriaInput): Promise<Criteria> => {
+  try {
+    // Verify that the referenced category exists
+    const existingCategory = await db.select()
+      .from(categoriesTable)
+      .where(eq(categoriesTable.id, input.category_id))
+      .execute();
+
+    if (existingCategory.length === 0) {
+      throw new Error(`Category with id ${input.category_id} does not exist`);
+    }
+
+    // Insert criteria record
+    const result = await db.insert(criteriaTable)
+      .values({
         category_id: input.category_id,
         name: input.name,
         pattern: input.pattern,
-        weight: input.weight,
-        created_at: new Date()
-    } as Criteria;
-}
+        weight: input.weight.toString(), // Convert number to string for numeric column
+      })
+      .returning()
+      .execute();
+
+    // Convert numeric fields back to numbers before returning
+    const criteria = result[0];
+    return {
+      ...criteria,
+      weight: parseFloat(criteria.weight), // Convert string back to number
+    };
+  } catch (error) {
+    console.error('Criteria creation failed:', error);
+    throw error;
+  }
+};

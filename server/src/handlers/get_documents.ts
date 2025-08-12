@@ -1,8 +1,19 @@
+import { db } from '../db';
+import { documentsTable } from '../db/schema';
 import { type Document } from '../schema';
 
 export async function getDocuments(): Promise<Document[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all uploaded documents from the database.
-    // Returns document metadata for display in document management interfaces.
-    return [];
+  try {
+    const results = await db.select()
+      .from(documentsTable)
+      .execute();
+
+    return results.map(doc => ({
+      ...doc,
+      // No numeric conversions needed for this table - all fields are integers, text, or timestamps
+    }));
+  } catch (error) {
+    console.error('Failed to fetch documents:', error);
+    throw error;
+  }
 }
